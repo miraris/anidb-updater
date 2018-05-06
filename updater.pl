@@ -19,7 +19,7 @@ use Data::Dumper;
 
 # requires
 require "./lib/httpclient.pl";
-require "./lib/inserter.pl";
+require "./lib/parser.pl";
 require "./lib/sql.pl";
 
 # Title dump file path
