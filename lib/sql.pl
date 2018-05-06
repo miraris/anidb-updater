@@ -46,9 +46,7 @@ sub updateEpisodes {
     foreach my $episode (@episodes) {
 
         # say ($episode->{titles}[0]->{title});
-        $sth = $dbh->prepare(
-"SELECT COUNT(*) FROM episodes WHERE anime_id = ? AND episode_number = ?"
-        );
+        $sth = $dbh->prepare("SELECT COUNT(*) FROM episodes WHERE anime_id = ? AND episode_number = ?");
 
         $sth->execute( $id, $episode->{episode_number} );
 
@@ -60,11 +58,6 @@ sub updateEpisodes {
         #     say $title->{title};
         # }
     }
-
-    # foreach my @episodes( keys %{ $grades{$name} } ) {
-    #     print "$name, $subject: $grades{$name}{$subject}\n";
-    # }
-
 }
 
 1;

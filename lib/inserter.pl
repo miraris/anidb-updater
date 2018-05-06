@@ -69,7 +69,7 @@ sub parseEpisodes {
                 type     => $episode->findvalue('epno/@type'),
                 air_date => parseDate( $episode->findvalue('airdate') ),
                 length   => $episode->findvalue('./length'),
-                titles   => [ @titles ]
+                titles   => [@titles]
             }
         );
     }

@@ -53,11 +53,13 @@ sub update {
     # print Dumper($anime_list);
 
     foreach my $item (@$anime_list) {
+
         # my $data = getAnime( $item->{anidb_id} );
         # load
         open my $fh, '<', 'test.xml';
-        binmode $fh; # drop all PerlIO layers possibly created by a use open pragma
-        my $data = XML::LibXML->load_xml(IO => $fh);
+        binmode
+          $fh;    # drop all PerlIO layers possibly created by a use open pragma
+        my $data = XML::LibXML->load_xml( IO => $fh );
 
         my %anime    = parseAnime($data);
         my $picture  = parsePicture($data);
@@ -65,10 +67,10 @@ sub update {
         my @episodes = parseEpisodes($data);
 
         if ( $opt->{partial} ) {
-            updateAnime($item->{id}, %anime);
-            updateTitles($item->{id}, @titles);
-            updatePicture($item->{id}, $picture);
-            updateEpisodes($item->{id}, @episodes);
+            updateAnime( $item->{id}, %anime );
+            updateTitles( $item->{id}, @titles );
+            updatePicture( $item->{id}, $picture );
+            updateEpisodes( $item->{id}, @episodes );
         }
     }
 
@@ -78,8 +80,7 @@ sub insert {
 
     # Exit if the modification time is lower than one day
     if ( ( $title_dump_mod_diff->days() ) <= 1 ) {
-        die
-"Cannot update yet, title dump modification time is lower than 24 hours\n";
+        die "Cannot update yet, title dump modification time is lower than 24 hours\n";
     }
 
     # foreach my $title ( $dom->findnodes('/animetitles/anime') ) {
