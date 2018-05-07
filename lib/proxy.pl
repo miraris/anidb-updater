@@ -1,26 +1,29 @@
 use Try::Tiny;
-use LWP::UserAgent ();
-
-my $proxy_agent = LWP::UserAgent->new;
+use LWP::Simple;
 
 # wow dirty, need to find out how this is written correctly..
 sub setProxy {
     my ($ua) = @_;
 
     while (1) {
-        try {
-            my $proxy = $proxy_agent->get('https://gimmeproxy.com/api/getProxy?curl=true');
-            print $proxy->decoded_content;
-            $ua->proxy( [ 'http', 'https' ], $proxy->decoded_content );
+        my $proxy = get("https://gimmeproxy.com/api/getProxy?protocol=http&curl=true");
+        print $proxy. "\n";
 
-            # test the proxy
-            my $test = $ua->get('http://example.org');
-            if ($test->is_success) {
-                last;
-            }
+        try {
+            $ua->proxy( [ 'http', 'https' ], $proxy );
         } catch {
-            print "Broken proxy?";
-            sleep(1);
+            print "Broken proxy?\n";
+            sleep(2);
+            next;
+        };
+
+        # test the proxy
+        my $test = $ua->get('http://example.org');
+        if ( $test->is_success ) {
+            print "This worked\n";
+
+            # break out of the loop
+            last;
         }
     }
 

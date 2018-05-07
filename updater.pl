@@ -32,16 +32,14 @@ my $title_dump_mod =
   DateTime->now->subtract_datetime_absolute(
     DateTime->from_epoch( epoch => ( stat($title_dump) )[9] ) )->seconds();
 
-my $opt = {
-    partial => undef,
-    new     => undef,
-    full    => undef,
-};
+my $partial = '';
+my $new = '';
+my $full = '';
 
 GetOptions(
-    'partial' => \$opt->{partial},
-    'new'     => \$opt->{new},
-    'full'    => \$opt->{full},
+    'partial' => \$partial,
+    'new'     => \$new,
+    'full'    => \$full,
 
     'm|man'  => sub { pod2usage( verbose => 3 ); },
     'h|help' => sub { pod2usage( verbose => 1 ); },
@@ -49,10 +47,10 @@ GetOptions(
 );
 
 # Run
-if ( $opt->{update} || $opt->{full} ) {
+if ( $partial || $full ) {
     update();
 }
-if ( $opt->{new} || $opt->{full} ) {
+if ( $new || $full ) {
     new();
 }
 

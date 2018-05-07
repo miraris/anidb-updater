@@ -139,30 +139,29 @@ sub insertPicture {
 }
 
 sub insertEpisodes {
-    my ( $id, @episodes ) {
-        foreach my $episode (@episodes) {
+    my ( $id, @episodes ) = @_;
 
-            my $sth = $dbh->prepare(
+    foreach my $episode (@episodes) {
+
+        my $sth = $dbh->prepare(
 'INSERT INTO episodes (anime_id, air_date, episode_number, duration, episode_type_id, created_at) VALUES (?, ?, ?, ?, ?, ?)'
-            );
+        );
 
-            $sth->execute( $id, $episode->{air_date}, $episode->{epno},
-                $episode->{length}, $episode->{type}, $timestamp )
-              or die "died, current anime ID: $id";
+        $sth->execute( $id, $episode->{air_date}, $episode->{epno},
+            $episode->{length}, $episode->{type}, $timestamp )
+          or die "died, current anime ID: $id";
 
-            #ep id
-            my $episode_id = $dbh->last_insert_id( undef, undef, undef, undef,
-                { sequence => 'episodes_id_seq' } );
+        #ep id
+        my $episode_id = $dbh->last_insert_id( undef, undef, undef, undef,
+            { sequence => 'episodes_id_seq' } );
 
-            for $title ( @{ $episode->{titles} } ) {
-                my $sth = $dbh->prepare(
+        for $title ( @{ $episode->{titles} } ) {
+            my $sth = $dbh->prepare(
 'INSERT INTO episode_titles (episode_id, title, language_id, created_at) VALUES (?, ?, ?, ?)'
-                );
-                $sth->execute(
-                    $episode_id,    $title->{title},
-                    $title->{lang}, $timestamp
-                ) or die "died, episode_id: $episode_id";
-            }
+            );
+            $sth->execute( $episode_id, $title->{title},
+                $title->{lang}, $timestamp )
+              or die "died, episode_id: $episode_id";
         }
     }
 }
