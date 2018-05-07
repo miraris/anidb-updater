@@ -1,5 +1,7 @@
 use LWP::UserAgent ();
 
+require "./lib/proxy.pl";
+
 # user agent options
 my %options =
   ( 'agent' =>
@@ -7,19 +9,36 @@ my %options =
   );
 
 my $ua = LWP::UserAgent->new(%options);
+$ua->timeout(10);
+$ua = setProxy($ua);
+
+# TODO: better validation
+sub failedRequest {
+    my ($text) = @_;
+
+    if (   $text eq '<error>Anime not found</error>'
+        || $text eq '<error code="500">banned</error>' )
+    {
+        return 1;
+    }
+    return 0;
+}
 
 sub getAnime {
     my ($id) = @_;
 
-    # debug
-    $id = 357;
-
-    $url = "http://api.anidb.net:9001/httpapi?request=anime&client=alastorehttp&clientver=1&protover=1&aid=$id";
+    $url =
+"http://api.anidb.net:9001/httpapi?request=anime&client=alastorehttp&clientver=1&protover=1&aid=$id";
     my $response = $ua->get($url);
 
-    if ( $response->is_success ) {
-        return $response->decoded_content;
+    while ( !$response->is_success
+        || failedRequest( $response->decoded_content ) )
+    {
+        $ua = setProxy($ua);
+        $response = $ua->get($url);
     }
+
+    return $response->decoded_content;
 }
 
 1;

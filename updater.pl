@@ -11,11 +11,13 @@ use DateTime;
 use Pod::Usage;
 use Getopt::Long;
 use XML::LibXML;
-
-use feature qw(say);
+use LWP::Simple;
+use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
+use Term::ProgressBar 2.00;
 
 #Debug
 use Data::Dumper;
+use feature qw(say);
 
 # requires
 require "./lib/httpclient.pl";
@@ -26,17 +28,19 @@ require "./lib/sql.pl";
 my $title_dump = './anime-titles.xml';
 
 # difference between current timestamp and title dump mod time
-my $title_dump_mod_diff =
-  DateTime->now->subtract_datetime(
-    DateTime->from_epoch( epoch => ( stat($title_dump) )[9] ) );
+my $title_dump_mod =
+  DateTime->now->subtract_datetime_absolute(
+    DateTime->from_epoch( epoch => ( stat($title_dump) )[9] ) )->seconds();
 
 my $opt = {
     partial => undef,
+    new     => undef,
     full    => undef,
 };
 
 GetOptions(
     'partial' => \$opt->{partial},
+    'new'     => \$opt->{new},
     'full'    => \$opt->{full},
 
     'm|man'  => sub { pod2usage( verbose => 3 ); },
@@ -45,48 +49,79 @@ GetOptions(
 );
 
 # Run
-update();
+if ( $opt->{update} || $opt->{full} ) {
+    update();
+}
+if ( $opt->{new} || $opt->{full} ) {
+    new();
+}
 
 sub update {
     my $anime_list = selectAnime();
-
-    # print Dumper($anime_list);
+    my $max        = scalar(@$anime_list);
+    my $progress   = Term::ProgressBar->new(
+        { name => 'Updating', count => $max, ETA => 'linear' } );
 
     foreach my $item (@$anime_list) {
 
-        # my $data = getAnime( $item->{anidb_id} );
-        # load
-        open my $fh, '<', 'test.xml';
-        binmode
-          $fh;    # drop all PerlIO layers possibly created by a use open pragma
-        my $data = XML::LibXML->load_xml( IO => $fh );
+        if ( $item->{anidb_id} == 357 ) {
+            next;
+        }
+
+        my $data = getAnime( $item->{anidb_id} );
+        $data = XML::LibXML->load_xml( string => $data );
 
         my %anime    = parseAnime($data);
-        my $picture  = parsePicture($data);
-        my @titles   = parseTitles($data);
         my @episodes = parseEpisodes($data);
 
-        if ( $opt->{partial} ) {
-            updateAnime( $item->{id}, %anime );
-            updateTitles( $item->{id}, @titles );
-            updatePicture( $item->{id}, $picture );
-            updateEpisodes( $item->{id}, @episodes );
-        }
+        updateAnime( $item->{id}, %anime );
+        updateEpisodes( $item->{id}, @episodes );
+
+        $progress->update($_);
+
+        sleep(2);
     }
+    $progress->update($max);
 
 }
 
-sub insert {
+sub new {
 
-    # Exit if the modification time is lower than one day
-    if ( ( $title_dump_mod_diff->days() ) <= 1 ) {
-        die "Cannot update yet, title dump modification time is lower than 24 hours\n";
+    # Do not download the titles dump if it has been fetched during 24 hours
+    unless ( $title_dump_mod < 86400 ) {
+        say
+"Title dump modification time is lower than 24 hours, using existing.\n";
+
+        # Fetch it.
+        my $content = getstore( "http://anidb.net/api/anime-titles.xml.gz",
+            'anime-titles.xml.gz' );
+        die "Can't get the title dump?" unless defined $content;
+        gunzip 'anime-titles.xml.gz' => $title_dump
+          or die "Decompression failed: $GunzipError\n";
     }
 
-    # foreach my $title ( $dom->findnodes('/animetitles/anime') ) {
-    #     # print $title->getAttribute('aid');
-    #     push (@list, $title->getAttribute('aid'));
-    # }
+    my $data = XML::LibXML->load_xml( location => $title_dump );
+
+    my $counter = 0;
+    foreach my $title ( $data->findnodes('//animetitles/anime') ) {
+
+        my $anidb_id = $title->getAttribute('aid');
+        unless ( animeExists($anidb_id) ) {
+            my $data = getAnime($anidb_id);
+
+            # Parse
+            my %anime    = parseAnime($data);
+            my $picture  = parsePicture($data);
+            my @titles   = parseTitles($data);
+            my @episodes = parseEpisodes($data);
+
+            # Insert
+            my $local_id = insertAnime(%anime);
+
+            insertEpisodes( $local_id, @episodes );
+            insertTitles( $local_id, @titles );
+        }
+    }
 }
 
 __END__

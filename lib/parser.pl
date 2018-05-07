@@ -24,6 +24,7 @@ sub parseAnime {
     );
 }
 
+# parse titles and return a titles array
 sub parseTitles {
     my ($anime) = @_;
     @titles = ();
@@ -40,11 +41,13 @@ sub parseTitles {
     return @titles;
 }
 
+# parse the nudes
 sub parsePicture {
     my ($dom) = @_;
     return $dom->findvalue('//anime/picture');
 }
 
+# parse episodes and it's titles, returns a relatively complex data structure
 sub parseEpisodes {
     my ($dom) = @_;
     @episodes = ();
@@ -75,11 +78,6 @@ sub parseEpisodes {
     }
 
     return @episodes;
-}
-
-sub loadXML {
-    my ($data) = @_;
-    return XML::LibXML->load_xml( string => $data );
 }
 
 1;
