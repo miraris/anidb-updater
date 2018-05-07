@@ -10,7 +10,7 @@ use feature qw(say);
 my $timestamp = DateTime->now;
 
 # pgsql connection
-my $dsn = "DBI:Pg:dbname = noraneko2;host = 127.0.0.1;port = 5432";
+my $dsn = "DBI:Pg:dbname = noraneko-dev;host = 127.0.0.1;port = 5432";
 my $dbh = DBI->connect( $dsn, "postgres", "", { RaiseError => 1 } )
   or die $DBI::errstr;
 
@@ -122,8 +122,8 @@ sub insertTitles {
     VALUES (?, ?, ?, ?, ?)'
         );
 
-        $sth->execute( $titles{title}, $id, $titles{lang},
-            $titles{type}, $timestamp )
+        $sth->execute( $title->{title}, $id, $title->{lang},
+            $title->{type}, $timestamp )
           or die "died, current anime ID: $id";
     }
 }
@@ -166,8 +166,14 @@ sub insertEpisodes {
     }
 }
 
-sub map {
+sub mapAnime {
+    my ( $id, $anidb_id ) = @_;
 
+    my $sth =
+      $dbh->prepare('INSERT INTO anime_map (anime_id, anidb_id) VALUES (?, ?)');
+
+    $sth->execute( $id, $anidb_id )
+      or die "died, current anime ID: $id";
 }
 
 1;

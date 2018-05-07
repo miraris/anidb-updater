@@ -20,25 +20,29 @@ sub getAnime {
 "http://api.anidb.net:9001/httpapi?request=anime&client=alastorehttp&clientver=1&protover=1&aid=$id";
     my $response = $ua->get($url);
 
-    my $data = $response->decoded_content
+    my $data = $response->decoded_content;
 
     # Don't try to fetch request a proxy for this
-    if ($text eq '<error>Anime not found</error>') {
-        return 0;
+    if ($data eq '<error>Anime not found</error>') {
+        return ( error => 404 );
     }
 
-    while ( !$response->is_success
-        || $data eq '<error code="500">banned</error>' )
-    {
-        # do they keep banning on the same request?
-        print $id;
-        print $data;
+    if ($data eq '<error code="500">banned</error>') {
+        print $id."\n";
+        print $data."\n";
+        return ( error => 500 );
+    }
 
+    # should probably handle this in a better way,
+    # but for now just set a proxy and move onto
+    # another anime. (this implies multiple script executions)
+    while ( !$response->is_success )
+    {
         $ua = setProxy($ua);
         $response = $ua->get($url);
     }
 
-    return $response->decoded_content;
+    return ( content => $response->decoded_content );
 }
 
 1;

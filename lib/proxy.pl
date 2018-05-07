@@ -11,7 +11,7 @@ sub setProxy {
         try {
             $ua->proxy( [ 'http', 'https' ], $proxy );
         } catch {
-            sleep(3);
+            sleep(1);
             next;
         };
 

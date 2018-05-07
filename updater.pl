@@ -7,12 +7,17 @@ use strict;
 use warnings;
 use utf8;
 
+# requires for packaging
+use arybase;
 use DateTime;
+use DBI;
+use List::Util qw(shuffle);
 use Pod::Usage;
 use Getopt::Long;
 use XML::LibXML;
 use LWP::Simple;
 use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
+use Regexp::Common qw(URI);
 use Term::ProgressBar 2.00;
 
 #Debug
@@ -33,8 +38,8 @@ my $title_dump_mod =
     DateTime->from_epoch( epoch => ( stat($title_dump) )[9] ) )->seconds();
 
 my $partial = '';
-my $new = '';
-my $full = '';
+my $new     = '';
+my $full    = '';
 
 GetOptions(
     'partial' => \$partial,
@@ -68,7 +73,7 @@ sub update {
 
         my $data = getAnime( $item->{anidb_id} );
 
-        if ($data == 0) {
+        if ( $data == 0 ) {
             next;
         }
 
@@ -105,26 +110,93 @@ sub new {
 
     my $data = XML::LibXML->load_xml( location => $title_dump );
 
-    my $counter = 0;
+    # list
+    my @id_list;
     foreach my $title ( $data->findnodes('//animetitles/anime') ) {
+        push @id_list, $title->getAttribute('aid');
+    }
+    @id_list = shuffle(@id_list);
 
-        my $anidb_id = $title->getAttribute('aid');
+    # bcs ascii art
+    my $max      = scalar(@id_list);
+    my $progress = Term::ProgressBar->new(
+        { name => 'Inserting new stuff', count => $max, ETA => 'linear' } );
+
+    # banned list
+    my @banned_list;
+
+    foreach my $anidb_id (@id_list) {
         unless ( animeExists($anidb_id) ) {
-            my $data = getAnime($anidb_id);
+
+            # fetch it
+            my %data = getAnime($anidb_id);
+            if ( defined($data{error}) && $data{error} == 505 ) {
+                push @banned_list, $anidb_id;
+                next;
+            }
+
+            # animu doesn't even exist
+            if ( defined($data{error}) && $data{error} == 404 ) {
+                next;
+            }
+
+            my $oof = XML::LibXML->load_xml( string => $data{content} );
 
             # Parse
-            my %anime    = parseAnime($data);
-            my $picture  = parsePicture($data);
-            my @titles   = parseTitles($data);
-            my @episodes = parseEpisodes($data);
+            my %anime    = parseAnime($oof);
+            my $picture  = parsePicture($oof);
+            my @titles   = parseTitles($oof);
+            my @episodes = parseEpisodes($oof);
 
             # Insert
             my $local_id = insertAnime(%anime);
             insertPicture( $local_id, $picture );
             insertEpisodes( $local_id, @episodes );
             insertTitles( $local_id, @titles );
+            mapAnime( $local_id, $anidb_id );
         }
+        $progress->update($_);
+        sleep(2);
     }
+    $progress->update($max);
+
+    # banned progress bar
+    $max      = scalar(@banned_list);
+    $progress = Term::ProgressBar->new(
+        { name => 'Banned list', count => $max, ETA => 'linear' } );
+
+    # one more try..
+    foreach my $anidb_id (@banned_list) {
+        unless ( animeExists($anidb_id) ) {
+
+            # fetch it
+            my %data = getAnime($anidb_id);
+
+            # fuck it
+            if ( defined($data{error}) && $data{error} == 505 ) {
+                next;
+            }
+
+            # load
+            my $oof = XML::LibXML->load_xml( string => $data{content} );
+
+            # parse
+            my %anime    = parseAnime($oof);
+            my $picture  = parsePicture($oof);
+            my @titles   = parseTitles($oof);
+            my @episodes = parseEpisodes($oof);
+
+            # insert
+            my $local_id = insertAnime(%anime);
+            insertPicture( $local_id, $picture );
+            insertEpisodes( $local_id, @episodes );
+            insertTitles( $local_id, @titles );
+            mapAnime( $local_id, $anidb_id );
+        }
+        $progress->update($_);
+        sleep(2);
+    }
+    $progress->update($max);
 }
 
 __END__
