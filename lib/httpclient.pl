@@ -23,22 +23,21 @@ sub getAnime {
     my $data = $response->decoded_content;
 
     # Don't try to fetch request a proxy for this
-    if ($data eq '<error>Anime not found</error>') {
+    if ( $data eq '<error>Anime not found</error>' ) {
         return ( error => 404 );
     }
 
-    if ($data eq '<error code="500">banned</error>') {
-        print $id."\n";
-        print $data."\n";
+    if ( $data eq '<error code="500">banned</error>' ) {
+        print $id. "\n";
+        print $data. "\n";
         return ( error => 500 );
     }
 
     # should probably handle this in a better way,
     # but for now just set a proxy and move onto
     # another anime. (this implies multiple script executions)
-    while ( !$response->is_success )
-    {
-        $ua = setProxy($ua);
+    while ( !$response->is_success ) {
+        $ua       = setProxy($ua);
         $response = $ua->get($url);
     }
 

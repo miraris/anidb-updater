@@ -71,13 +71,20 @@ sub update {
             next;
         }
 
-        my $data = getAnime( $item->{anidb_id} );
+        # fetch it
+        my %data = getAnime( $item->{anidb_id} );
 
-        if ( $data == 0 ) {
+        if ( defined( $data{error} ) && $data{error} == 505 ) {
+            push @banned_list, $anidb_id;
             next;
         }
 
-        $data = XML::LibXML->load_xml( string => $data );
+        # animu doesn't even exist
+        if ( defined( $data{error} ) && $data{error} == 404 ) {
+            next;
+        }
+
+        $data = XML::LibXML->load_xml( string => $data{content} );
 
         my %anime    = parseAnime($data);
         my @episodes = parseEpisodes($data);
@@ -130,13 +137,14 @@ sub new {
 
             # fetch it
             my %data = getAnime($anidb_id);
-            if ( defined($data{error}) && $data{error} == 505 ) {
+
+            if ( defined( $data{error} ) && $data{error} == 505 ) {
                 push @banned_list, $anidb_id;
                 next;
             }
 
             # animu doesn't even exist
-            if ( defined($data{error}) && $data{error} == 404 ) {
+            if ( defined( $data{error} ) && $data{error} == 404 ) {
                 next;
             }
 
@@ -173,7 +181,7 @@ sub new {
             my %data = getAnime($anidb_id);
 
             # fuck it
-            if ( defined($data{error}) && $data{error} == 505 ) {
+            if ( defined( $data{error} ) && $data{error} == 505 ) {
                 next;
             }
 

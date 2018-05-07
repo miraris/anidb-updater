@@ -6,11 +6,13 @@ sub setProxy {
     my ($ua) = @_;
 
     while (1) {
-        my $proxy = get("https://gimmeproxy.com/api/getProxy?protocol=http&curl=true");
+        my $proxy =
+          get("https://gimmeproxy.com/api/getProxy?protocol=http&curl=true");
 
         try {
             $ua->proxy( [ 'http', 'https' ], $proxy );
-        } catch {
+        }
+        catch {
             sleep(1);
             next;
         };
