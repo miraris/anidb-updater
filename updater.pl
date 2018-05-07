@@ -74,7 +74,7 @@ sub update {
         # fetch it
         my %data = getAnime( $item->{anidb_id} );
 
-        if ( defined( $data{error} ) && $data{error} == 505 ) {
+        if ( defined( $data{error} ) && $data{error} == 500 ) {
             push @banned_list, $anidb_id;
             next;
         }
@@ -138,7 +138,7 @@ sub new {
             # fetch it
             my %data = getAnime($anidb_id);
 
-            if ( defined( $data{error} ) && $data{error} == 505 ) {
+            if ( defined( $data{error} ) && $data{error} == 500 ) {
                 push @banned_list, $anidb_id;
                 next;
             }
@@ -181,7 +181,7 @@ sub new {
             my %data = getAnime($anidb_id);
 
             # fuck it
-            if ( defined( $data{error} ) && $data{error} == 505 ) {
+            if ( defined( $data{error} ) && $data{error} == 500 ) {
                 next;
             }
 
