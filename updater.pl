@@ -64,6 +64,7 @@ sub update {
     my $max        = scalar(@$anime_list);
     my $progress   = Term::ProgressBar->new(
         { name => 'Updating', count => $max, ETA => 'linear' } );
+    my @banned_list = ();
 
     foreach my $item (@$anime_list) {
 
@@ -75,7 +76,7 @@ sub update {
         my %data = getAnime( $item->{anidb_id} );
 
         if ( defined( $data{error} ) && $data{error} == 500 ) {
-            push @banned_list, $anidb_id;
+            push @banned_list, $item->{anidb_id};
             next;
         }
 
@@ -84,10 +85,10 @@ sub update {
             next;
         }
 
-        $data = XML::LibXML->load_xml( string => $data{content} );
+        my $oof = XML::LibXML->load_xml( string => $data{content} );
 
-        my %anime    = parseAnime($data);
-        my @episodes = parseEpisodes($data);
+        my %anime    = parseAnime($oof);
+        my @episodes = parseEpisodes($oof);
 
         updateAnime( $item->{id}, %anime );
         updateEpisodes( $item->{id}, @episodes );

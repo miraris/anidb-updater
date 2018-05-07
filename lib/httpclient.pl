@@ -30,6 +30,7 @@ sub getAnime {
     if ( $data eq '<error code="500">banned</error>' ) {
         print $id. "\n";
         print $data. "\n";
+        $ua = setProxy($ua);
         return ( error => 500 );
     }
 
