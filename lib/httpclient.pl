@@ -13,17 +13,6 @@ $ua->timeout(10);
 $ua = setProxy($ua);
 
 # TODO: better validation
-sub failedRequest {
-    my ($text) = @_;
-
-    if (   $text eq '<error>Anime not found</error>'
-        || $text eq '<error code="500">banned</error>' )
-    {
-        return 1;
-    }
-    return 0;
-}
-
 sub getAnime {
     my ($id) = @_;
 
@@ -31,9 +20,20 @@ sub getAnime {
 "http://api.anidb.net:9001/httpapi?request=anime&client=alastorehttp&clientver=1&protover=1&aid=$id";
     my $response = $ua->get($url);
 
+    my $data = $response->decoded_content
+
+    # Don't try to fetch request a proxy for this
+    if ($text eq '<error>Anime not found</error>') {
+        return 0;
+    }
+
     while ( !$response->is_success
-        || failedRequest( $response->decoded_content ) )
+        || $data eq '<error code="500">banned</error>' )
     {
+        # do they keep banning on the same request?
+        print $id;
+        print $data;
+
         $ua = setProxy($ua);
         $response = $ua->get($url);
     }

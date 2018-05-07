@@ -7,20 +7,18 @@ sub setProxy {
 
     while (1) {
         my $proxy = get("https://gimmeproxy.com/api/getProxy?protocol=http&curl=true");
-        print $proxy. "\n";
 
         try {
             $ua->proxy( [ 'http', 'https' ], $proxy );
         } catch {
-            print "Broken proxy?\n";
-            sleep(2);
+            sleep(3);
             next;
         };
 
         # test the proxy
         my $test = $ua->get('http://example.org');
         if ( $test->is_success ) {
-            print "This worked\n";
+            print "Fetched a new proxy: $proxy\n";
 
             # break out of the loop
             last;

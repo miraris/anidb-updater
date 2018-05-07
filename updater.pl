@@ -67,6 +67,11 @@ sub update {
         }
 
         my $data = getAnime( $item->{anidb_id} );
+
+        if ($data == 0) {
+            next;
+        }
+
         $data = XML::LibXML->load_xml( string => $data );
 
         my %anime    = parseAnime($data);
