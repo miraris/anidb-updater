@@ -6,13 +6,10 @@ Shitty PERL script to update our database
 
 Perl > 5.10 ?
 
-```
-Give examples
-```
-
 ### TODO
 
-* New anime sync
-* Rotate proxies
-* Well, finish SQL queries
-* Makefile
+1. ~~New anime sync~~
+2. ~~Rotate proxies~~
+3. ~~Well, finish SQL queries~~
+4. [Makefile](http://search.cpan.org/~bdfoy/PerlPowerTools-1.012_01/Makefile.PL)
+5. Refactor?

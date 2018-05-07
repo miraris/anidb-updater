@@ -117,7 +117,7 @@ sub new {
 
             # Insert
             my $local_id = insertAnime(%anime);
-
+            insertPicture( $local_id, $picture );
             insertEpisodes( $local_id, @episodes );
             insertTitles( $local_id, @titles );
         }
@@ -145,8 +145,9 @@ and performing queries to AniDB.
 
 =head3 Update type
 
-  --full    Full update, fetches new anime and updates existing
+  --full    Full update, updates existing then fetches new anime
   --partial Only updates ongoing & unknown anime
+  --new     Only fetches new anime
 
 =head3 Documentation
 
