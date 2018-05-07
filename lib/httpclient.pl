@@ -35,9 +35,10 @@ sub getAnime {
     }
 
     # should probably handle this in a better way,
-    # but for now just set a proxy and move onto
-    # another anime. (this implies multiple script executions)
-    while ( !$response->is_success ) {
+    # for now just, set a new proxy and request again
+    while ( !$response->is_success
+        || index( $data{content}, '<anime id=' ) != -1 )
+    {
         $ua       = setProxy($ua);
         $response = $ua->get($url);
     }

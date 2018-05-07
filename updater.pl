@@ -58,6 +58,10 @@ if ( $partial || $full ) {
 if ( $new || $full ) {
     new();
 }
+unless ($partial || $new || $full) {
+    die("No args supplied.");
+}
+
 
 sub update {
     my $anime_list = selectAnime();
