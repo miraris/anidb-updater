@@ -59,10 +59,9 @@ if ( $partial || $full ) {
 if ( $new || $full ) {
     new();
 }
-unless ($partial || $new || $full) {
+unless ( $partial || $new || $full ) {
     die("No args supplied.");
 }
-
 
 sub update {
     my $anime_list = selectAnime();
@@ -93,18 +92,21 @@ sub update {
         # again.. implies multiple script executions
         try {
             my $oof = XML::LibXML->load_xml( string => $data{content} );
-        } catch {
+
+            my %anime    = parseAnime($oof);
+            my @episodes = parseEpisodes($oof);
+
+            updateAnime( $item->{id}, %anime );
+            updateEpisodes( $item->{id}, @episodes );
+
+            $progress->update($_);
+        }
+        catch {
             say "Couldn't load the XML string, skipping.";
+            $progress->update($_);
+
             next;
         };
-
-        my %anime    = parseAnime($oof);
-        my @episodes = parseEpisodes($oof);
-
-        updateAnime( $item->{id}, %anime );
-        updateEpisodes( $item->{id}, @episodes );
-
-        $progress->update($_);
 
         sleep(2);
     }
@@ -160,22 +162,32 @@ sub new {
                 next;
             }
 
-            my $oof = XML::LibXML->load_xml( string => $data{content} );
+            # again.. implies multiple script executions
+            try {
+                my $oof = XML::LibXML->load_xml( string => $data{content} );
 
-            # Parse
-            my %anime    = parseAnime($oof);
-            my $picture  = parsePicture($oof);
-            my @titles   = parseTitles($oof);
-            my @episodes = parseEpisodes($oof);
+                # Parse
+                my %anime    = parseAnime($oof);
+                my $picture  = parsePicture($oof);
+                my @titles   = parseTitles($oof);
+                my @episodes = parseEpisodes($oof);
 
-            # Insert
-            my $local_id = insertAnime(%anime);
-            insertPicture( $local_id, $picture );
-            insertEpisodes( $local_id, @episodes );
-            insertTitles( $local_id, @titles );
-            mapAnime( $local_id, $anidb_id );
+                # Insert
+                my $local_id = insertAnime(%anime);
+                insertPicture( $local_id, $picture );
+                insertEpisodes( $local_id, @episodes );
+                insertTitles( $local_id, @titles );
+                mapAnime( $local_id, $anidb_id );
+
+                $progress->update($_);
+            }
+            catch {
+                say "Couldn't parse the XML string, skipping.";
+                $progress->update($_);
+
+                next;
+            };
         }
-        $progress->update($_);
         sleep(2);
     }
     $progress->update($max);
@@ -198,22 +210,31 @@ sub new {
             }
 
             # load
-            my $oof = XML::LibXML->load_xml( string => $data{content} );
+            # again.. implies multiple script executions
+            try {
+                my $oof = XML::LibXML->load_xml( string => $data{content} );
 
-            # parse
-            my %anime    = parseAnime($oof);
-            my $picture  = parsePicture($oof);
-            my @titles   = parseTitles($oof);
-            my @episodes = parseEpisodes($oof);
+                # parse
+                my %anime    = parseAnime($oof);
+                my $picture  = parsePicture($oof);
+                my @titles   = parseTitles($oof);
+                my @episodes = parseEpisodes($oof);
 
-            # insert
-            my $local_id = insertAnime(%anime);
-            insertPicture( $local_id, $picture );
-            insertEpisodes( $local_id, @episodes );
-            insertTitles( $local_id, @titles );
-            mapAnime( $local_id, $anidb_id );
+                # insert
+                my $local_id = insertAnime(%anime);
+                insertPicture( $local_id, $picture );
+                insertEpisodes( $local_id, @episodes );
+                insertTitles( $local_id, @titles );
+                mapAnime( $local_id, $anidb_id );
+            }
+            catch {
+                say "Couldn't load the XML string, skipping.";
+                $progress->update($_);
+
+                next;
+            };
         }
-        $progress->update($_);
+
         sleep(2);
     }
     $progress->update($max);
