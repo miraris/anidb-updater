@@ -19,6 +19,7 @@ use LWP::Simple;
 use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
 use Regexp::Common qw(URI);
 use Term::ProgressBar 2.00;
+use Try::Tiny;
 
 #Debug
 use Data::Dumper;
@@ -89,7 +90,13 @@ sub update {
             next;
         }
 
-        my $oof = XML::LibXML->load_xml( string => $data{content} );
+        # again.. implies multiple script executions
+        try {
+            my $oof = XML::LibXML->load_xml( string => $data{content} );
+        } catch {
+            say "Couldn't load the XML string, skipping.";
+            next;
+        };
 
         my %anime    = parseAnime($oof);
         my @episodes = parseEpisodes($oof);
