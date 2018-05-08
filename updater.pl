@@ -99,11 +99,11 @@ sub update {
             updateAnime( $item->{id}, %anime );
             updateEpisodes( $item->{id}, @episodes );
 
-            $progress->update($_);
+            $progress->update(1);
         }
         catch {
             say "Couldn't load the XML string, skipping.";
-            $progress->update($_);
+            $progress->update(1);
 
             next;
         };
@@ -178,11 +178,11 @@ sub new {
                 insertTitles( $local_id, @titles );
                 mapAnime( $local_id, $anidb_id );
 
-                $progress->update($_);
+                $progress->update(1);
             }
             catch {
                 say "Couldn't parse the XML string, skipping.";
-                $progress->update($_);
+                $progress->update(1);
 
                 next;
             };
@@ -225,10 +225,11 @@ sub new {
                 insertEpisodes( $local_id, @episodes );
                 insertTitles( $local_id, @titles );
                 mapAnime( $local_id, $anidb_id );
+                $progress->update(1);
             }
             catch {
                 say "Couldn't load the XML string, skipping.";
-                $progress->update($_);
+                $progress->update(1);
 
                 next;
             };
