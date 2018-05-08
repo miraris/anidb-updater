@@ -116,10 +116,9 @@ sub update {
 
 sub new {
 
-    # Do not download the titles dump if it has been fetched during 24 hours
+# Only download the titles dump if it hasn't been fetched during the last 24 hours
     unless ( $title_dump_mod < 86400 ) {
-        say
-"Title dump modification time is lower than 24 hours, using existing.\n";
+        say "Fetching a new titles dump.\n";
 
         # Fetch it.
         my $content = getstore( "http://anidb.net/api/anime-titles.xml.gz",
