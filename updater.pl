@@ -11,6 +11,7 @@ use utf8;
 use arybase;
 use DateTime;
 use DBI;
+use JSON;
 use List::Util qw(shuffle);
 use Pod::Usage;
 use Getopt::Long;
@@ -41,11 +42,13 @@ my $title_dump_mod =
 my $partial = '';
 my $new     = '';
 my $full    = '';
+my $sync    = '';
 
 GetOptions(
     'partial' => \$partial,
     'new'     => \$new,
     'full'    => \$full,
+    'sync'    => \$sync,
 
     'm|man'  => sub { pod2usage( verbose => 3 ); },
     'h|help' => sub { pod2usage( verbose => 1 ); },
@@ -59,8 +62,23 @@ if ( $partial || $full ) {
 if ( $new || $full ) {
     new();
 }
-unless ( $partial || $new || $full ) {
+if ( $sync ) {
+    sync();
+}
+unless ( $partial || $new || $full || $sync ) {
     die("No args supplied.");
+}
+
+sub sync {
+    my $mal_list = selectMAL();
+
+    foreach my $item (@$mal_list) {
+        my $content = get("https://api.myanimelist.net/v0.8/anime/$item->{mal_id}?fields=mean,rank,popularity,num_list_users,num_scoring_users");
+        die "Couldn't get it!" unless defined $content;
+
+        my $data = decode_json($content);
+        syncAnime($item->{id}, $data->{rank}, $data->{main_picture}->{large});
+    }
 }
 
 sub update {
