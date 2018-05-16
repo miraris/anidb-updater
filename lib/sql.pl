@@ -10,19 +10,16 @@ use feature qw(say);
 # timestamp
 my $timestamp = DateTime->now;
 
-
-my $json_config = do {
-   open(my $json_fh, "<:encoding(UTF-8)", 'db.json')
-      or die("Can't open \$filename\": $!\n");
-   local $/;
-   <$json_fh>
-};
-my $config = JSON::decode_json($json_config);
+my %config = (
+    dbname  => "nekoani",
+    user => "postgres",
+    pass  => "",
+);
 
 # pgsql connection
-my $dsn = "DBI:Pg:dbname = $config->{dbname};host = 127.0.0.1;port = 5432";
+my $dsn = "DBI:Pg:dbname = $config{dbname};host = 127.0.0.1;port = 5432";
 my $dbh =
-  DBI->connect( $dsn, $config->{dbuser}, $config->{dbpass},
+  DBI->connect( $dsn, $config->{user}, $config{pass},
     { RaiseError => 1 } )
   or die $DBI::errstr;
 
