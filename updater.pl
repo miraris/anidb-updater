@@ -23,7 +23,6 @@ use Term::ProgressBar 2.00;
 use Try::Tiny;
 
 #Debug
-use Data::Dumper;
 use feature qw(say);
 
 # requires
@@ -84,7 +83,6 @@ sub sync {
             next;
         }
 
-        say $content;
         my $data = decode_json($content);
         syncAnime($item->{id}, $data->{rank}, $data->{main_picture}->{large});
         $progress->update(1);
