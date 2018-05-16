@@ -54,7 +54,7 @@ sub selectAnime {
 
     my $sql = "SELECT anime.id, anime_map.anidb_id
         FROM noraneko.anime
-        LEFT JOIN anime_map ON anime.id = anime_map.anime_id
+        LEFT JOIN noraneko.anime_map ON anime.id = anime_map.anime_id
         WHERE state_id != 0";
 
     my $anime_list = $dbh->selectall_arrayref( $sql, { Slice => {} } );
@@ -86,7 +86,7 @@ sub updateEpisodes {
     foreach my $episode (@episodes) {
         my $episode_number = $episode->{epno};
         my $count          = $dbh->selectrow_array(
-"SELECT COUNT(*) FROM noraneko.episodes WHERE anime_id=$id AND episode_number='$episode_number'",
+"SELECT COUNT(*) FROM noraneko.episode WHERE anime_id=$id AND episode_number='$episode_number'",
             undef
         );
 

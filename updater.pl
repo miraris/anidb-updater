@@ -79,13 +79,12 @@ sub sync {
         my $content = get("https://api.myanimelist.net/v0.8/anime/$item->{mal_id}?fields=mean,rank,popularity,num_list_users,num_scoring_users");
         unless (defined $content) {
             say "Couldn't get the anime.";
-            $progress->update(1);
             next;
         }
 
         my $data = decode_json($content);
         syncAnime($item->{id}, $data->{rank}, $data->{main_picture}->{large});
-        $progress->update(1);
+        $progress->update($_);
     }
 }
 
@@ -124,13 +123,10 @@ sub update {
 
             updateAnime( $item->{id}, %anime );
             updateEpisodes( $item->{id}, @episodes );
-
-            $progress->update(1);
+            $progress->update($_);
         }
         catch {
             say "Couldn't load the XML string, skipping.";
-            $progress->update(1);
-
             next;
         };
 
@@ -204,12 +200,10 @@ sub new {
                 insertTitles( $local_id, @titles );
                 mapAnime( $local_id, $anidb_id );
 
-                $progress->update(1);
+                $progress->update($_);
             }
             catch {
                 say "Couldn't parse the XML string, skipping.";
-                $progress->update(1);
-
                 next;
             };
         }
@@ -251,12 +245,10 @@ sub new {
                 insertEpisodes( $local_id, @episodes );
                 insertTitles( $local_id, @titles );
                 mapAnime( $local_id, $anidb_id );
-                $progress->update(1);
+                $progress->update($_);
             }
             catch {
                 say "Couldn't load the XML string, skipping.";
-                $progress->update(1);
-
                 next;
             };
         }
