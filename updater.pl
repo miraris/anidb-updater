@@ -72,12 +72,20 @@ unless ( $partial || $new || $full || $sync ) {
 sub sync {
     my $mal_list = selectMAL();
 
+    my $max        = scalar(@$mal_list);
+    my $progress   = Term::ProgressBar->new(
+        { name => 'Synchronizing', count => $max, ETA => 'linear' } );
+
     foreach my $item (@$mal_list) {
         my $content = get("https://api.myanimelist.net/v0.8/anime/$item->{mal_id}?fields=mean,rank,popularity,num_list_users,num_scoring_users");
-        die "Couldn't get it!" unless defined $content;
+        unless (defined $content) {
+            say "Couldn't get the anime.";
+            next;
+        }
 
         my $data = decode_json($content);
         syncAnime($item->{id}, $data->{rank}, $data->{main_picture}->{large});
+        $progress->update($_);
     }
 }
 
