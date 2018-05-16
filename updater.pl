@@ -80,12 +80,14 @@ sub sync {
         my $content = get("https://api.myanimelist.net/v0.8/anime/$item->{mal_id}?fields=mean,rank,popularity,num_list_users,num_scoring_users");
         unless (defined $content) {
             say "Couldn't get the anime.";
+            $progress->update(1);
             next;
         }
 
+        say $content;
         my $data = decode_json($content);
         syncAnime($item->{id}, $data->{rank}, $data->{main_picture}->{large});
-        $progress->update($_);
+        $progress->update(1);
     }
 }
 
@@ -290,6 +292,7 @@ and performing queries to AniDB.
   --full    Full update, updates existing then fetches new anime
   --partial Only updates ongoing & unknown anime
   --new     Only fetches new anime
+  --sync    Synchronize with MAL
 
 =head3 Documentation
 

@@ -10,6 +10,7 @@ my %options =
 
 my $ua = LWP::UserAgent->new(%options);
 $ua->timeout(10);
+$ua->no_proxy('api.myanimelist.net');
 $ua = setProxy($ua);
 
 # TODO: better validation
@@ -44,6 +45,18 @@ sub getAnime {
     }
 
     return ( content => $response->decoded_content );
+}
+
+sub malFetch {
+    my ($id) = @_;
+
+    $url = "https://api.myanimelist.net/v0.8/anime/$id?fields=mean,rank,popularity,num_list_users,num_scoring_users";
+    my $response = $ua->get($url);
+    unless ($response->is_success) {
+        return undef;
+    }
+
+    return $response->decoded_content;
 }
 
 1;
