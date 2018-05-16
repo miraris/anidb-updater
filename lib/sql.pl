@@ -1,5 +1,6 @@
 use utf8;
 use DBI;
+use JSON;
 require "./lib/helpers.pl";
 
 #Debug
@@ -9,9 +10,20 @@ use feature qw(say);
 # timestamp
 my $timestamp = DateTime->now;
 
+
+my $json_config = do {
+   open(my $json_fh, "<:encoding(UTF-8)", 'db.json')
+      or die("Can't open \$filename\": $!\n");
+   local $/;
+   <$json_fh>
+};
+my $config = JSON::decode_json($json_config);
+
 # pgsql connection
-my $dsn = "DBI:Pg:dbname = noraneko-test;host = 127.0.0.1;port = 5432";
-my $dbh = DBI->connect( $dsn, "postgres", "", { RaiseError => 1 } )
+my $dsn = "DBI:Pg:dbname = $config->{dbname};host = 127.0.0.1;port = 5432";
+my $dbh =
+  DBI->connect( $dsn, $config->{dbuser}, $config->{dbpass},
+    { RaiseError => 1 } )
   or die $DBI::errstr;
 
 # anime.id to noraneko.anime.id (i.e)
@@ -27,13 +39,15 @@ sub selectMAL {
 }
 
 sub syncAnime {
-    my ($id, $rank, $poster) = @_;
+    my ( $id, $rank, $poster ) = @_;
 
-    my $sth = $dbh->prepare("UPDATE noraneko.anime SET rank = ?, updated_at = ? WHERE id=$id");
+    my $sth = $dbh->prepare(
+        "UPDATE noraneko.anime SET rank = ?, updated_at = ? WHERE id=$id");
     $sth->execute( $rank, $timestamp ) or die "died, current anime ID: $id";
 
     my $sth =
-      $dbh->prepare("UPDATE noraneko.poster SET anime_id = ?, mal = ? WHERE id=$id");
+      $dbh->prepare(
+        "UPDATE noraneko.poster SET anime_id = ?, mal = ? WHERE id=$id");
 
     $sth->execute( $id, $poster )
       or die "died, current anime ID: $id";
@@ -157,7 +171,8 @@ sub insertPicture {
     my ( $id, $picture ) = @_;
 
     my $sth =
-      $dbh->prepare('INSERT INTO noraneko.poster (anime_id, anidb) VALUES (?, ?)');
+      $dbh->prepare(
+        'INSERT INTO noraneko.poster (anime_id, anidb) VALUES (?, ?)');
 
     $sth->execute( $id, $picture )
       or die "died, current anime ID: $id";
@@ -195,7 +210,8 @@ sub mapAnime {
     my ( $id, $anidb_id ) = @_;
 
     my $sth =
-      $dbh->prepare('INSERT INTO noraneko.anime_map (anime_id, anidb_id) VALUES (?, ?)');
+      $dbh->prepare(
+        'INSERT INTO noraneko.anime_map (anime_id, anidb_id) VALUES (?, ?)');
 
     $sth->execute( $id, $anidb_id )
       or die "died, current anime ID: $id";
