@@ -19,15 +19,15 @@ my %config = (
 # pgsql connection
 my $dsn = "DBI:Pg:dbname = $config{dbname};host = 127.0.0.1;port = 5432";
 my $dbh =
-  DBI->connect( $dsn, $config->{user}, $config{pass},
+  DBI->connect( $dsn, $config{user}, $config{pass},
     { RaiseError => 1 } )
   or die $DBI::errstr;
 
-# anime.id to noraneko.anime.id (i.e)
+# anime.id to nekoani.anime.id (i.e)
 sub selectMAL {
     my $sql = "SELECT anime.id, anime_map.mal_id
-        FROM noraneko.anime
-        LEFT JOIN noraneko.anime_map ON anime.id = anime_map.anime_id
+        FROM nekoani.anime
+        LEFT JOIN nekoani.anime_map ON anime.id = anime_map.anime_id
         WHERE mal_id IS NOT NULL";
 
     my $anime_list = $dbh->selectall_arrayref( $sql, { Slice => {} } );
@@ -39,12 +39,12 @@ sub syncAnime {
     my ( $id, $rank, $poster ) = @_;
 
     my $sth = $dbh->prepare(
-        "UPDATE noraneko.anime SET rank = ?, updated_at = ? WHERE id=$id");
+        "UPDATE nekoani.anime SET rank = ?, updated_at = ? WHERE id=$id");
     $sth->execute( $rank, $timestamp ) or die "died, current anime ID: $id";
 
     my $sth =
       $dbh->prepare(
-        "UPDATE noraneko.poster SET anime_id = ?, mal = ? WHERE id=$id");
+        "UPDATE nekoani.poster SET anime_id = ?, mal = ? WHERE id=$id");
 
     $sth->execute( $id, $poster )
       or die "died, current anime ID: $id";
@@ -53,7 +53,7 @@ sub syncAnime {
 sub animeExists {
     my ($id) = @_;
     $count = $dbh->selectrow_array(
-        "SELECT COUNT(*) FROM noraneko.anime_map WHERE anidb_id=$id", undef );
+        "SELECT COUNT(*) FROM nekoani.anime_map WHERE anidb_id=$id", undef );
 
     if ( $count > 0 ) {
         return 1;
@@ -64,8 +64,8 @@ sub animeExists {
 sub selectAnime {
 
     my $sql = "SELECT anime.id, anime_map.anidb_id
-        FROM noraneko.anime
-        LEFT JOIN noraneko.anime_map ON anime.id = anime_map.anime_id
+        FROM nekoani.anime
+        LEFT JOIN nekoani.anime_map ON anime.id = anime_map.anime_id
         WHERE state_id != 0";
 
     my $anime_list = $dbh->selectall_arrayref( $sql, { Slice => {} } );
@@ -77,7 +77,7 @@ sub updateAnime {
     my ( $id, %anime ) = @_;
 
     my $sth = $dbh->prepare(
-"UPDATE noraneko.anime SET episode_count = ?, start_date = ?, end_date = ?, state_id = ?, synopsis = ?, updated_at = ? WHERE id=$id"
+"UPDATE nekoani.anime SET episode_count = ?, start_date = ?, end_date = ?, state_id = ?, synopsis = ?, updated_at = ? WHERE id=$id"
     );
 
     $synopsis = $anime{description};
@@ -97,7 +97,7 @@ sub updateEpisodes {
     foreach my $episode (@episodes) {
         my $episode_number = $episode->{epno};
         my $count          = $dbh->selectrow_array(
-"SELECT COUNT(*) FROM noraneko.episode WHERE anime_id=$id AND episode_number='$episode_number'",
+"SELECT COUNT(*) FROM nekoani.episode WHERE anime_id=$id AND episode_number='$episode_number'",
             undef
         );
 
@@ -106,7 +106,7 @@ sub updateEpisodes {
         }
 
         my $sth = $dbh->prepare(
-'INSERT INTO noraneko.episode (anime_id, air_date, episode_number, episode_type_id, duration, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+'INSERT INTO nekoani.episode (anime_id, air_date, episode_number, episode_type_id, duration, created_at) VALUES (?, ?, ?, ?, ?, ?)'
         );
 
         $sth->execute( $id, $episode->{air_date}, $episode->{epno},
@@ -119,7 +119,7 @@ sub updateEpisodes {
 
         for $title ( @{ $episode->{titles} } ) {
             my $sth = $dbh->prepare(
-'INSERT INTO noraneko.episode_title (episode_id, title, language_id, created_at) VALUES (?, ?, ?, ?)'
+'INSERT INTO nekoani.episode_title (episode_id, title, language_id, created_at) VALUES (?, ?, ?, ?)'
             );
             $sth->execute( $episode_id, $title->{title}, $title->{lang},
                 $timestamp )
@@ -137,7 +137,7 @@ sub insertAnime {
     }
 
     my $sth = $dbh->prepare(
-'INSERT INTO noraneko.anime (synopsis, start_date, end_date, state_id, type_id, episode_count, created_at)
+'INSERT INTO nekoani.anime (synopsis, start_date, end_date, state_id, type_id, episode_count, created_at)
 VALUES (?, ?, ?, ?, ?, ?, ?)'
     );
 
@@ -154,7 +154,7 @@ sub insertTitles {
 
     foreach my $title (@titles) {
         my $sth = $dbh->prepare(
-'INSERT INTO noraneko.anime_title (title, anime_id, language_id, title_type_id, created_at)
+'INSERT INTO nekoani.anime_title (title, anime_id, language_id, title_type_id, created_at)
     VALUES (?, ?, ?, ?, ?)'
         );
 
@@ -169,7 +169,7 @@ sub insertPicture {
 
     my $sth =
       $dbh->prepare(
-        'INSERT INTO noraneko.poster (anime_id, anidb) VALUES (?, ?)');
+        'INSERT INTO nekoani.poster (anime_id, anidb) VALUES (?, ?)');
 
     $sth->execute( $id, $picture )
       or die "died, current anime ID: $id";
@@ -181,7 +181,7 @@ sub insertEpisodes {
     foreach my $episode (@episodes) {
 
         my $sth = $dbh->prepare(
-'INSERT INTO noraneko.episode (anime_id, air_date, episode_number, duration, episode_type_id, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+'INSERT INTO nekoani.episode (anime_id, air_date, episode_number, duration, episode_type_id, created_at) VALUES (?, ?, ?, ?, ?, ?)'
         );
 
         $sth->execute( $id, $episode->{air_date}, $episode->{epno},
@@ -194,7 +194,7 @@ sub insertEpisodes {
 
         for $title ( @{ $episode->{titles} } ) {
             my $sth = $dbh->prepare(
-'INSERT INTO noraneko.episode_title (episode_id, title, language_id, created_at) VALUES (?, ?, ?, ?)'
+'INSERT INTO nekoani.episode_title (episode_id, title, language_id, created_at) VALUES (?, ?, ?, ?)'
             );
             $sth->execute( $episode_id, $title->{title},
                 $title->{lang}, $timestamp )
@@ -208,7 +208,7 @@ sub mapAnime {
 
     my $sth =
       $dbh->prepare(
-        'INSERT INTO noraneko.anime_map (anime_id, anidb_id) VALUES (?, ?)');
+        'INSERT INTO nekoani.anime_map (anime_id, anidb_id) VALUES (?, ?)');
 
     $sth->execute( $id, $anidb_id )
       or die "died, current anime ID: $id";

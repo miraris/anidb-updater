@@ -264,7 +264,7 @@ __END__
 
 =head1 NAME
 
-Noraneko updater
+nekoani updater
 
 =head1 USAGE
 
@@ -272,7 +272,7 @@ updater.pl [OPTIONS..]
 
 =head1 DESCRIPTION
 
-Updates the noraneko database by selecting unknown/ongoing anime
+Updates the nekoani database by selecting unknown/ongoing anime
 and performing queries to AniDB.
 
 =head1 OPTIONS
