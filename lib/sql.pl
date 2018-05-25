@@ -11,7 +11,7 @@ use feature qw(say);
 my $timestamp = DateTime->now;
 
 my %config = (
-    dbname  => "nekoani",
+    dbname  => "nekoani_testing",
     user => "postgres",
     pass  => "",
 );
@@ -115,7 +115,7 @@ sub updateEpisodes {
 
         #ep id
         my $episode_id = $dbh->last_insert_id( undef, undef, undef, undef,
-            { sequence => 'episodes_id_seq' } );
+            { sequence => 'episode_id_seq' } );
 
         for $title ( @{ $episode->{titles} } ) {
             my $sth = $dbh->prepare(
@@ -190,7 +190,7 @@ sub insertEpisodes {
 
         #ep id
         my $episode_id = $dbh->last_insert_id( undef, undef, undef, undef,
-            { sequence => 'episodes_id_seq' } );
+            { sequence => 'episode_id_seq' } );
 
         for $title ( @{ $episode->{titles} } ) {
             my $sth = $dbh->prepare(

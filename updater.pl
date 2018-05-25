@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 my $APP = 'updater';
 use vars qw($VERSION);
-$VERSION = '0.1.0';
+$VERSION = '0.2.0';
 
 use strict;
 use warnings;
@@ -88,6 +88,7 @@ sub sync {
     }
 }
 
+# update existing anime
 sub update {
     my $anime_list = selectAnime();
     my $max        = scalar(@$anime_list);
@@ -96,7 +97,6 @@ sub update {
     my @banned_list = ();
 
     foreach my $item (@$anime_list) {
-
         if ( $item->{anidb_id} == 357 ) {
             next;
         }
@@ -136,9 +136,9 @@ sub update {
 
 }
 
+# fetch and insert new anime
 sub new {
-
-# Only download the titles dump if it hasn't been fetched during the last 24 hours
+    # Only download the titles dump if it hasn't been fetched during the last 24 hours
     unless ( $title_dump_mod < 86400 ) {
         say "Fetching a new titles dump.\n";
 
