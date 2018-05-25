@@ -11,7 +11,7 @@ use feature qw(say);
 my $timestamp = DateTime->now;
 
 my %config = (
-    dbname  => "nekoani_testing",
+    dbname  => "nekoani",
     user => "postgres",
     pass  => "",
 );
@@ -115,7 +115,7 @@ sub updateEpisodes {
 
         #ep id
         my $episode_id = $dbh->last_insert_id( undef, undef, undef, undef,
-            { sequence => 'episode_id_seq' } );
+            { sequence => 'nekoani.episode_id_seq' } );
 
         for $title ( @{ $episode->{titles} } ) {
             my $sth = $dbh->prepare(
@@ -146,7 +146,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?)'
       or die "died, current anime ID: $id";
 
     return $dbh->last_insert_id( undef, undef, undef, undef,
-        { sequence => 'anime_id_seq' } );
+        { sequence => 'nekoani.anime_id_seq' } );
 }
 
 sub insertTitles {
@@ -190,7 +190,7 @@ sub insertEpisodes {
 
         #ep id
         my $episode_id = $dbh->last_insert_id( undef, undef, undef, undef,
-            { sequence => 'episode_id_seq' } );
+            { sequence => 'nekoani.episode_id_seq' } );
 
         for $title ( @{ $episode->{titles} } ) {
             my $sth = $dbh->prepare(
