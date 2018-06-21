@@ -11,10 +11,10 @@ use feature qw(say);
 my $timestamp = DateTime->now;
 
 my %config = (
-    name  => $ENV{"DB_NAME"};,
-    user => $ENV{"DB_USER"};,
-    pass  => $ENV{"DB_PASS"};,
-    host => $ENV{"DB_HOST"};
+    name  => $ENV{"DB_NAME"},
+    user => $ENV{"DB_USER"},
+    pass  => $ENV{"DB_PASS"},
+    host => $ENV{"DB_HOST"}
 );
 
 # pgsql connection

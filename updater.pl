@@ -19,7 +19,6 @@ use XML::LibXML;
 use LWP::Simple;
 use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
 use Regexp::Common qw(URI);
-use Term::ProgressBar 2.00;
 use Try::Tiny;
 
 #Debug
@@ -36,7 +35,7 @@ my $title_dump = './anime-titles.xml';
 # difference between current timestamp and title dump mod time
 my $title_dump_mod =
   DateTime->now->subtract_datetime_absolute(
-    DateTime->from_epoch( epoch => ( stat($title_dump) )[9] ) )->seconds();
+    DateTime->from_epoch( epoch => ( stat($title_dump) )[9] ) )->seconds() if -e $title_dump;
 
 my $partial = '';
 my $new     = '';
@@ -71,10 +70,6 @@ unless ( $partial || $new || $full || $sync ) {
 sub sync {
     my $mal_list = selectMAL();
 
-    my $max        = scalar(@$mal_list);
-    my $progress   = Term::ProgressBar->new(
-        { name => 'Synchronizing', count => $max, ETA => 'linear' } );
-
     foreach my $item (@$mal_list) {
         my $content = get("https://api.myanimelist.net/v0.8/anime/$item->{mal_id}?fields=mean,rank,popularity,num_list_users,num_scoring_users");
         unless (defined $content) {
@@ -84,16 +79,12 @@ sub sync {
 
         my $data = decode_json($content);
         syncAnime($item->{id}, $data->{rank}, $data->{main_picture}->{large});
-        $progress->update($_);
     }
 }
 
 # update existing anime
 sub update {
     my $anime_list = selectAnime();
-    my $max        = scalar(@$anime_list);
-    my $progress   = Term::ProgressBar->new(
-        { name => 'Updating', count => $max, ETA => 'linear' } );
     my @banned_list = ();
 
     foreach my $item (@$anime_list) {
@@ -123,7 +114,6 @@ sub update {
 
             updateAnime( $item->{id}, %anime );
             updateEpisodes( $item->{id}, @episodes );
-            $progress->update($_);
         }
         catch {
             say "Couldn't load the XML string, skipping.";
@@ -132,14 +122,12 @@ sub update {
 
         sleep(2);
     }
-    $progress->update($max);
-
 }
 
 # fetch and insert new anime
 sub new {
     # Only download the titles dump if it hasn't been fetched during the last 24 hours
-    unless ( $title_dump_mod < 86400 ) {
+    if ( !defined($title_dump_mod) || $title_dump_mod > 86400 ) {
         say "Fetching a new titles dump.\n";
 
         # Fetch it.
@@ -158,11 +146,6 @@ sub new {
         push @id_list, $title->getAttribute('aid');
     }
     @id_list = shuffle(@id_list);
-
-    # bcs ascii art
-    my $max      = scalar(@id_list);
-    my $progress = Term::ProgressBar->new(
-        { name => 'Inserting new stuff', count => $max, ETA => 'linear' } );
 
     # banned list
     my @banned_list;
@@ -199,8 +182,6 @@ sub new {
                 insertEpisodes( $local_id, @episodes );
                 insertTitles( $local_id, @titles );
                 mapAnime( $local_id, $anidb_id );
-
-                $progress->update($_);
             }
             catch {
                 say "Couldn't parse the XML string, skipping.";
@@ -209,12 +190,6 @@ sub new {
         }
         sleep(2);
     }
-    $progress->update($max);
-
-    # banned progress bar
-    $max      = scalar(@banned_list);
-    $progress = Term::ProgressBar->new(
-        { name => 'Banned list', count => $max, ETA => 'linear' } );
 
     # one more try..
     foreach my $anidb_id (@banned_list) {
@@ -245,7 +220,6 @@ sub new {
                 insertEpisodes( $local_id, @episodes );
                 insertTitles( $local_id, @titles );
                 mapAnime( $local_id, $anidb_id );
-                $progress->update($_);
             }
             catch {
                 say "Couldn't load the XML string, skipping.";
@@ -255,7 +229,6 @@ sub new {
 
         sleep(2);
     }
-    $progress->update($max);
 }
 
 __END__
