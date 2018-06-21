@@ -11,13 +11,14 @@ use feature qw(say);
 my $timestamp = DateTime->now;
 
 my %config = (
-    dbname  => "nekoani",
-    user => "postgres",
-    pass  => "",
+    name  => $ENV{"DB_NAME"};,
+    user => $ENV{"DB_USER"};,
+    pass  => $ENV{"DB_PASS"};,
+    host => $ENV{"DB_HOST"};
 );
 
 # pgsql connection
-my $dsn = "DBI:Pg:dbname = $config{dbname};host = 127.0.0.1;port = 5432";
+my $dsn = "DBI:Pg:dbname = $config{name};host = $config{host};port = 5432";
 my $dbh =
   DBI->connect( $dsn, $config{user}, $config{pass},
     { RaiseError => 1 } )
