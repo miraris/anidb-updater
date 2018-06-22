@@ -67,6 +67,7 @@ unless ( $partial || $new || $full || $sync ) {
     die("No args supplied.");
 }
 
+# Sync ongoing subroutine
 sub sync {
     my $mal_list = selectMAL();
 
@@ -116,11 +117,11 @@ sub update {
             updateEpisodes( $item->{id}, @episodes );
         }
         catch {
-            say "Couldn't load the XML string, skipping.";
+            warn "Caught error: $_";
             next;
         };
 
-        sleep(2);
+        sleep(3);
     }
 }
 
@@ -182,13 +183,15 @@ sub new {
                 insertEpisodes( $local_id, @episodes );
                 insertTitles( $local_id, @titles );
                 mapAnime( $local_id, $anidb_id );
+
+                say "Awesome, just mapped $local_id";
             }
             catch {
-                say "Couldn't parse the XML string, skipping.";
+                warn "Caught error: $_";
                 next;
             };
         }
-        sleep(2);
+        sleep(3);
     }
 
     # one more try..
@@ -220,14 +223,16 @@ sub new {
                 insertEpisodes( $local_id, @episodes );
                 insertTitles( $local_id, @titles );
                 mapAnime( $local_id, $anidb_id );
+
+                say "Awesome, just mapped $local_id";
             }
             catch {
-                say "Couldn't load the XML string, skipping.";
+                warn "Caught error: $_";
                 next;
             };
         }
 
-        sleep(2);
+        sleep(3);
     }
 }
 

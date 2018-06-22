@@ -20,7 +20,6 @@ sub getAnime {
     $url =
 "http://api.anidb.net:9001/httpapi?request=anime&client=alastorehttp&clientver=1&protover=1&aid=$id";
     my $response = $ua->get($url);
-
     my $data = $response->decoded_content;
 
     # Don't try to fetch request a proxy for this
@@ -40,6 +39,7 @@ sub getAnime {
     while ( !$response->is_success
         || index( $data{content}, '<anime id=' ) != -1 )
     {
+        print "Failed on anime $id, fetching a new proxy.\n";
         $ua       = setProxy($ua);
         $response = $ua->get($url);
     }
