@@ -17,6 +17,7 @@ sub getState {
     if ( defined $start_date && $start_date lt $now ) {
         return ( defined $end_date && $end_date lt $now ) ? 0 : 1;
     }
+
     # if the start date is unknown but the anime already ended
     elsif ( defined $end_date && $end_date lt $now ) {
         return 0;
@@ -29,10 +30,10 @@ sub cleanSynopsis {
     my ($synopsis) = @_;
     my $p = Parse::BBCode::Markdown->new();
 
-    while($synopsis =~ /$RE{URI}{-keep}(\s+\[(.*?)\])/g) {
-        my $start = "[url=$1]";
+    while ( $synopsis =~ /$RE{URI}{-keep}(\s+\[(.*?)\])/g ) {
+        my $start      = "[url=$1]";
         my $to_replace = $2;
-        my $end = $3 . '[/url]';
+        my $end        = $3 . '[/url]';
 
         $synopsis =~ s/$1/$start/g;
         $synopsis =~ s/\Q$to_replace/$end/g;

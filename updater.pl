@@ -105,6 +105,7 @@ sub update {
 
         # animu doesn't even exist
         if ( defined( $data{error} ) && $data{error} == 404 ) {
+            say "Anime $item->{anidb_id} doesn't exist anymore?";
             sleep(2);
             next;
         }
@@ -162,8 +163,6 @@ sub new {
             next;
         }
 
-        say "Trying to map $anidb_id";
-
         # fetch it
         my %data = getAnime($anidb_id);
 
@@ -174,6 +173,7 @@ sub new {
 
         # animu doesn't even exist
         if ( defined( $data{error} ) && $data{error} == 404 ) {
+            say "Anime with AniDB ID $anidb_id doesn't exist.";
             sleep(2);
             next;
         }
@@ -223,6 +223,7 @@ sub new {
 
         # animu doesn't even exist
         if ( defined( $data{error} ) && $data{error} == 404 ) {
+            say "Anime with AniDB ID $anidb_id doesn't exist.";
             sleep(2);
             next;
         }

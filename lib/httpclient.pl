@@ -13,14 +13,13 @@ $ua->timeout(10);
 $ua->no_proxy('api.myanimelist.net');
 $ua->env_proxy;
 setProxy($ua);
-# $ua->proxy( [ 'http', 'https' ], setProxy($ua) );
 
 # TODO: better validation
 sub getAnime {
-    my ($id) = @_;
+    my ($id)      = @_;
     my $NOT_FOUND = '<error>Anime not found</error>';
-    my $BANNED = '<error code="500">banned</error>';
-    my $ANIME = '<anime id=';
+    my $BANNED    = '<error code="500">banned</error>';
+    my $ANIME     = '<anime id=';
 
     my $url =
 "http://api.anidb.net:9001/httpapi?request=anime&client=alastorehttp&clientver=1&protover=1&aid=$id";
@@ -28,7 +27,7 @@ sub getAnime {
     my $data     = $response->decoded_content;
 
     # Don't try to fetch request a proxy for this
-    if ( $data =~ /\Q$NOT_FOUND\E/ ) { return ( error => 404 ); } 
+    if ( $data =~ /\Q$NOT_FOUND\E/ ) { return ( error => 404 ); }
 
     # An actual ban
     if ( $data =~ /\Q$BANNED\E/ ) {
@@ -38,9 +37,8 @@ sub getAnime {
         return ( error => 500 );
     }
 
-    # Probably proxy or internal server errors, also pushing this into the banned list..
-    unless ( $response->is_success || $data =~ /\Q$ANIME\E/ )
-    {
+# Probably proxy or internal server errors, also pushing this into the banned list..
+    unless ( $response->is_success || $data =~ /\Q$ANIME\E/ ) {
         print $data;
         print "Failed on anime $id, fetching a new proxy.\n";
         setProxy($ua);
