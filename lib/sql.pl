@@ -11,17 +11,16 @@ use feature qw(say);
 my $timestamp = DateTime->now;
 
 my %config = (
-    name  => $ENV{"DB_NAME"},
+    name => $ENV{"DB_NAME"},
     user => $ENV{"DB_USER"},
-    pass  => $ENV{"DB_PASS"},
+    pass => $ENV{"DB_PASS"},
     host => $ENV{"DB_HOST"}
 );
 
 # pgsql connection
 my $dsn = "DBI:Pg:dbname = $config{name};host = $config{host};port = 5432";
 my $dbh =
-  DBI->connect( $dsn, $config{user}, $config{pass},
-    { RaiseError => 1 } )
+  DBI->connect( $dsn, $config{user}, $config{pass}, { RaiseError => 1 } )
   or die $DBI::errstr;
 
 # anime.id to nekoani.anime.id (i.e)

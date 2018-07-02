@@ -8,7 +8,6 @@ use warnings;
 use utf8;
 
 # requires for packaging
-use arybase;
 use DateTime;
 use DBI;
 use JSON;
@@ -35,7 +34,8 @@ my $title_dump = './anime-titles.xml';
 # difference between current timestamp and title dump mod time
 my $title_dump_mod =
   DateTime->now->subtract_datetime_absolute(
-    DateTime->from_epoch( epoch => ( stat($title_dump) )[9] ) )->seconds() if -e $title_dump;
+    DateTime->from_epoch( epoch => ( stat($title_dump) )[9] ) )->seconds()
+  if -e $title_dump;
 
 my $partial = '';
 my $new     = '';
@@ -60,7 +60,7 @@ if ( $partial || $full ) {
 if ( $new || $full ) {
     new();
 }
-if ( $sync ) {
+if ($sync) {
     sync();
 }
 unless ( $partial || $new || $full || $sync ) {
@@ -72,20 +72,22 @@ sub sync {
     my $mal_list = selectMAL();
 
     foreach my $item (@$mal_list) {
-        my $content = get("https://api.myanimelist.net/v0.8/anime/$item->{mal_id}?fields=mean,rank,popularity,num_list_users,num_scoring_users");
-        unless (defined $content) {
+        my $content = get(
+"https://api.myanimelist.net/v0.8/anime/$item->{mal_id}?fields=mean,rank,popularity,num_list_users,num_scoring_users"
+        );
+        unless ( defined $content ) {
             say "Couldn't get the anime.";
             next;
         }
 
         my $data = decode_json($content);
-        syncAnime($item->{id}, $data->{rank}, $data->{main_picture}->{large});
+        syncAnime( $item->{id}, $data->{rank}, $data->{main_picture}->{large} );
     }
 }
 
 # update existing anime
 sub update {
-    my $anime_list = selectAnime();
+    my $anime_list  = selectAnime();
     my @banned_list = ();
 
     foreach my $item (@$anime_list) {
@@ -103,6 +105,7 @@ sub update {
 
         # animu doesn't even exist
         if ( defined( $data{error} ) && $data{error} == 404 ) {
+            sleep(2);
             next;
         }
 
@@ -115,19 +118,22 @@ sub update {
 
             updateAnime( $item->{id}, %anime );
             updateEpisodes( $item->{id}, @episodes );
+
+            say "Sugoi, updated $item->{id}";
         }
         catch {
             warn "Caught error: $_";
             next;
         };
 
-        sleep(3);
+        sleep(2);
     }
 }
 
 # fetch and insert new anime
 sub new {
-    # Only download the titles dump if it hasn't been fetched during the last 24 hours
+
+# Only download the titles dump if it hasn't been fetched during the last 24 hours
     if ( !defined($title_dump_mod) || $title_dump_mod > 86400 ) {
         say "Fetching a new titles dump.\n";
 
@@ -139,11 +145,11 @@ sub new {
           or die "Decompression failed: $GunzipError\n";
     }
 
-    my $data = XML::LibXML->load_xml( location => $title_dump );
+    my $titles = XML::LibXML->load_xml( location => $title_dump );
 
     # list
     my @id_list;
-    foreach my $title ( $data->findnodes('//animetitles/anime') ) {
+    foreach my $title ( $titles->findnodes('//animetitles/anime') ) {
         push @id_list, $title->getAttribute('aid');
     }
     @id_list = shuffle(@id_list);
@@ -152,87 +158,101 @@ sub new {
     my @banned_list;
 
     foreach my $anidb_id (@id_list) {
-        unless ( animeExists($anidb_id) ) {
-
-            # fetch it
-            my %data = getAnime($anidb_id);
-
-            if ( defined( $data{error} ) && $data{error} == 500 ) {
-                push @banned_list, $anidb_id;
-                next;
-            }
-
-            # animu doesn't even exist
-            if ( defined( $data{error} ) && $data{error} == 404 ) {
-                next;
-            }
-
-            # again.. implies multiple script executions
-            try {
-                my $oof = XML::LibXML->load_xml( string => $data{content} );
-
-                # Parse
-                my %anime    = parseAnime($oof);
-                my $picture  = parsePicture($oof);
-                my @titles   = parseTitles($oof);
-                my @episodes = parseEpisodes($oof);
-
-                # Insert
-                my $local_id = insertAnime(%anime);
-                insertPicture( $local_id, $picture );
-                insertEpisodes( $local_id, @episodes );
-                insertTitles( $local_id, @titles );
-                mapAnime( $local_id, $anidb_id );
-
-                say "Awesome, just mapped $local_id";
-            }
-            catch {
-                warn "Caught error: $_";
-                next;
-            };
+        if ( animeExists($anidb_id) ) {
+            next;
         }
-        sleep(3);
+
+        say "Trying to map $anidb_id";
+
+        # fetch it
+        my %data = getAnime($anidb_id);
+
+        if ( defined( $data{error} ) && $data{error} == 500 ) {
+            push @banned_list, $anidb_id;
+            next;
+        }
+
+        # animu doesn't even exist
+        if ( defined( $data{error} ) && $data{error} == 404 ) {
+            sleep(2);
+            next;
+        }
+
+        # again.. implies multiple script executions
+        try {
+            my $oof = XML::LibXML->load_xml( string => $data{content} );
+
+            # Parse
+            my %anime    = parseAnime($oof);
+            my $picture  = parsePicture($oof);
+            my @titles   = parseTitles($oof);
+            my @episodes = parseEpisodes($oof);
+
+            # Insert
+            my $local_id = insertAnime(%anime);
+            insertPicture( $local_id, $picture );
+            insertEpisodes( $local_id, @episodes );
+            insertTitles( $local_id, @titles );
+            mapAnime( $local_id, $anidb_id );
+
+            say "Sugoi, just mapped $local_id";
+        }
+        catch {
+            warn "Caught error: $_";
+            next;
+        };
+
+        sleep(2);
     }
 
     # one more try..
+    say "Going for a 2nd iteration over 500 response anime.";
+
     foreach my $anidb_id (@banned_list) {
-        unless ( animeExists($anidb_id) ) {
-
-            # fetch it
-            my %data = getAnime($anidb_id);
-
-            # fuck it
-            if ( defined( $data{error} ) && $data{error} == 500 ) {
-                next;
-            }
-
-            # load
-            # again.. implies multiple script executions
-            try {
-                my $oof = XML::LibXML->load_xml( string => $data{content} );
-
-                # parse
-                my %anime    = parseAnime($oof);
-                my $picture  = parsePicture($oof);
-                my @titles   = parseTitles($oof);
-                my @episodes = parseEpisodes($oof);
-
-                # insert
-                my $local_id = insertAnime(%anime);
-                insertPicture( $local_id, $picture );
-                insertEpisodes( $local_id, @episodes );
-                insertTitles( $local_id, @titles );
-                mapAnime( $local_id, $anidb_id );
-
-                say "Awesome, just mapped $local_id";
-            }
-            catch {
-                warn "Caught error: $_";
-                next;
-            };
+        if ( animeExists($anidb_id) ) {
+            next;
         }
 
-        sleep(3);
+        # fetch it
+        my %data = getAnime($anidb_id);
+
+        # fuck it
+        if ( defined( $data{error} ) && $data{error} == 500 ) {
+            next;
+        }
+
+        # animu doesn't even exist
+        if ( defined( $data{error} ) && $data{error} == 404 ) {
+            sleep(2);
+            next;
+        }
+
+        # load
+        # again.. implies multiple script executions
+        try {
+            my $oof = XML::LibXML->load_xml( string => $data{content} );
+
+            # parse
+            my %anime    = parseAnime($oof);
+            my $picture  = parsePicture($oof);
+            my @titles   = parseTitles($oof);
+            my @episodes = parseEpisodes($oof);
+
+            # insert
+            my $local_id = insertAnime(%anime);
+            insertPicture( $local_id, $picture );
+            insertEpisodes( $local_id, @episodes );
+            insertTitles( $local_id, @titles );
+            mapAnime( $local_id, $anidb_id );
+
+            say "Sugoi, just mapped $local_id";
+        }
+        catch {
+            warn "Caught error: $_";
+            next;
+        };
+
+        sleep(2);
     }
 }
 

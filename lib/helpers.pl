@@ -1,6 +1,7 @@
 use utf8;
 use Regexp::Common qw(URI);
 use DateTime;
+use Parse::BBCode::Markdown;
 
 # Check whether it's a legit date
 sub parseDate {
@@ -14,12 +15,10 @@ sub getState {
     my $now = DateTime->now->ymd;
 
     if ( defined $start_date && $start_date lt $now ) {
-        return ( $end_date && $end_date lt $now ) ? 0 : 1;
+        return ( defined $end_date && $end_date lt $now ) ? 0 : 1;
     }
-
-    # some weird cases ..
-    # when $start_date is null
-    if ( defined $end_date && $end_date lt $now ) {
+    # if the start date is unknown but the anime already ended
+    elsif ( defined $end_date && $end_date lt $now ) {
         return 0;
     }
 
@@ -28,25 +27,18 @@ sub getState {
 
 sub cleanSynopsis {
     my ($synopsis) = @_;
+    my $p = Parse::BBCode::Markdown->new();
 
-    my @bad_words;
+    while($synopsis =~ /$RE{URI}{-keep}(\s+\[(.*?)\])/g) {
+        my $start = "[url=$1]";
+        my $to_replace = $2;
+        my $end = $3 . '[/url]';
 
-    while ( $synopsis =~ /\[(.*?)\]/g ) {
-        my $match = $1;
-
-        unless ( $synopsis =~ /\Q\/$match/ || $match =~ '/' ) {
-            push( @bad_words, $match );
-        }
+        $synopsis =~ s/$1/$start/g;
+        $synopsis =~ s/\Q$to_replace/$end/g;
     }
 
-    $synopsis =~ s{$RE{URI}{-keep}}{[url=$1]}g;
-
-    foreach my $badword (@bad_words) {
-        my $newString = $badword . '[/url]';
-        $synopsis =~ s{\s+\[$badword\]}{$newString}g;
-    }
-
-    return $synopsis;
+    return $p->render($synopsis);
 }
 
 1;

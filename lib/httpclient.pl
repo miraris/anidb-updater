@@ -11,48 +11,52 @@ my %options =
 my $ua = LWP::UserAgent->new(%options);
 $ua->timeout(10);
 $ua->no_proxy('api.myanimelist.net');
-$ua = setProxy($ua);
+$ua->env_proxy;
+setProxy($ua);
+# $ua->proxy( [ 'http', 'https' ], setProxy($ua) );
 
 # TODO: better validation
 sub getAnime {
     my ($id) = @_;
+    my $NOT_FOUND = '<error>Anime not found</error>';
+    my $BANNED = '<error code="500">banned</error>';
+    my $ANIME = '<anime id=';
 
-    $url =
+    my $url =
 "http://api.anidb.net:9001/httpapi?request=anime&client=alastorehttp&clientver=1&protover=1&aid=$id";
     my $response = $ua->get($url);
-    my $data = $response->decoded_content;
+    my $data     = $response->decoded_content;
 
     # Don't try to fetch request a proxy for this
-    if ( $data eq '<error>Anime not found</error>' ) {
-        return ( error => 404 );
-    }
+    if ( $data =~ /\Q$NOT_FOUND\E/ ) { return ( error => 404 ); } 
 
-    if ( $data eq '<error code="500">banned</error>' ) {
+    # An actual ban
+    if ( $data =~ /\Q$BANNED\E/ ) {
         print $id. "\n";
         print $data. "\n";
-        $ua = setProxy($ua);
+        setProxy($ua);
         return ( error => 500 );
     }
 
-    # should probably handle this in a better way,
-    # for now just, set a new proxy and request again
-    while ( !$response->is_success
-        || index( $data{content}, '<anime id=' ) != -1 )
+    # Probably proxy or internal server errors, also pushing this into the banned list..
+    unless ( $response->is_success || $data =~ /\Q$ANIME\E/ )
     {
+        print $data;
         print "Failed on anime $id, fetching a new proxy.\n";
-        $ua       = setProxy($ua);
-        $response = $ua->get($url);
+        setProxy($ua);
+        return ( error => 500 );
     }
 
-    return ( content => $response->decoded_content );
+    return ( content => $data );
 }
 
 sub malFetch {
     my ($id) = @_;
 
-    $url = "https://api.myanimelist.net/v0.8/anime/$id?fields=mean,rank,popularity,num_list_users,num_scoring_users";
+    my $url =
+"https://api.myanimelist.net/v0.8/anime/$id?fields=mean,rank,popularity,num_list_users,num_scoring_users";
     my $response = $ua->get($url);
-    unless ($response->is_success) {
+    unless ( $response->is_success ) {
         return undef;
     }
 
