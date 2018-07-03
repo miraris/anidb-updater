@@ -26,6 +26,7 @@ sub getState {
     return 2;
 }
 
+# Parse synopsis into markdown
 sub cleanSynopsis {
     my ($synopsis) = @_;
     my $p = Parse::BBCode::Markdown->new();
@@ -35,9 +36,12 @@ sub cleanSynopsis {
         my $to_replace = $2;
         my $end        = $3 . '[/url]';
 
-        $synopsis =~ s/$1/$start/g;
-        $synopsis =~ s/\Q$to_replace/$end/g;
+        $synopsis =~ s/$1/$start/g; # convert the URL to a valid BBCode URL
+        $synopsis =~ s/\Q$to_replace/$end/g; # strip square brackets and append the closing tag
     }
+
+    $synopsis =~ s/`/'/g; # replace backticks ` with single quotes '
+    $synopsis =~ s/(^\*.*$)/$1\n/m; # append \n if the line starts with *
 
     return $p->render($synopsis);
 }
