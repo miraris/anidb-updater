@@ -40,13 +40,11 @@ my $title_dump_mod =
 my $partial = '';
 my $new     = '';
 my $full    = '';
-my $sync    = '';
 
 GetOptions(
     'partial' => \$partial,
     'new'     => \$new,
     'full'    => \$full,
-    'sync'    => \$sync,
 
     'm|man'  => sub { pod2usage( verbose => 3 ); },
     'h|help' => sub { pod2usage( verbose => 1 ); },
@@ -60,29 +58,8 @@ if ( $partial || $full ) {
 if ( $new || $full ) {
     new();
 }
-if ($sync) {
-    sync();
-}
-unless ( $partial || $new || $full || $sync ) {
+unless ( $partial || $new || $full ) {
     die("No args supplied.");
-}
-
-# Sync ongoing subroutine
-sub sync {
-    my $mal_list = selectMAL();
-
-    foreach my $item (@$mal_list) {
-        my $content = get(
-"https://api.myanimelist.net/v0.8/anime/$item->{mal_id}?fields=mean,rank,popularity,num_list_users,num_scoring_users"
-        );
-        unless ( defined $content ) {
-            say "Couldn't get the anime.";
-            next;
-        }
-
-        my $data = decode_json($content);
-        syncAnime( $item->{id}, $data->{rank}, $data->{main_picture}->{large} );
-    }
 }
 
 # update existing anime
@@ -281,7 +258,6 @@ and performing queries to AniDB.
   --full    Full update, updates existing then fetches new anime
   --partial Only updates ongoing & unknown anime
   --new     Only fetches new anime
-  --sync    Synchronize with MAL
 
 =head3 Documentation
 

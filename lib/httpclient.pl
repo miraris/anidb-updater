@@ -48,17 +48,4 @@ sub getAnime {
     return ( content => $data );
 }
 
-sub malFetch {
-    my ($id) = @_;
-
-    my $url =
-"https://api.myanimelist.net/v0.8/anime/$id?fields=mean,rank,popularity,num_list_users,num_scoring_users";
-    my $response = $ua->get($url);
-    unless ( $response->is_success ) {
-        return undef;
-    }
-
-    return $response->decoded_content;
-}
-
 1;

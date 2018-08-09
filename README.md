@@ -5,6 +5,7 @@ Shitty PERL script to update our database
 ### Prerequisites
 
 Perl > 5.10 ?
+See Dockerfile for dependencies
 
 ### TODO
 
