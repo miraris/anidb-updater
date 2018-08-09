@@ -1,4 +1,4 @@
-# Noraneko Updater
+# ARCHIVED
 
 Shitty PERL script to update our database
 
